@@ -89,7 +89,7 @@ sap.ui.define([], function () {
         const currency = clean(obj.currency || "");
 
         /* =============================== */
-        /* Datos del XML                   */
+        /* Datos del XML que se muestran en la VIEW                  */
         /* =============================== */
 
         const cuentaDestino = padLeft(

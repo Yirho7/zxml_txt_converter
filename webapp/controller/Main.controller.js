@@ -1,0 +1,333 @@
+sap.ui.define([
+  "sap/ui/core/mvc/Controller",
+  "sap/m/MessageToast",
+  "sap/ui/core/util/File",
+  "zxmltxt/zxmltxtconverter/util/Interbancarios",
+  "zxmltxt/zxmltxtconverter/util/Terceros",
+  "zxmltxt/zxmltxtconverter/util/Reembolsos"
+], function (
+  Controller,
+  MessageToast,
+  FileUtil,
+  Interbancarios,
+  Terceros,
+  Reembolsos
+) {
+  "use strict";
+
+  const NS = "urn:iso:std:iso:20022:tech:xsd:pain.001.001.03";
+
+  return Controller.extend("zxmltxt.zxmltxtconverter.controller.Main", {
+
+    /* ========================================================= */
+    /* INIT */
+    /* ========================================================= */
+    onInit: function () {
+      this._xmlFile = null;
+      this._txtContent = "";
+    },
+
+    /* ========================================================= */
+    /* FILE */
+    /* ========================================================= */
+    onFileChange: function (oEvent) {
+      const files = oEvent.getParameter("files");
+      this._xmlFile = (files && files.length) ? files[0] : null;
+
+      this._txtContent = "";
+      this.byId("taTxt").setValue("");
+      this.byId("btnDownload").setEnabled(false);
+
+      if (this._xmlFile) {
+        MessageToast.show("XML seleccionado: " + this._xmlFile.name);
+      }
+    },
+
+    /* ========================================================= */
+    /* API HELPERS */
+    /* ========================================================= */
+
+    // API 1 (OData V4) Bank
+    _getBankData: async function (bankId) {
+      const oModel = this.getView().getModel("bankModel");
+      if (!oModel) throw new Error("bankModel no existe");
+
+      const path = `/Bank(BankCountry='MX',BankInternalID='${bankId}')`;
+      const ctx = oModel.bindContext(path);
+      const data = await ctx.requestObject();
+
+      return {
+        branch: data?.LongBankBranch || ""
+      };
+    },
+
+    // Helper lectura OData V2
+    _readV2: function (sPath) {
+      return new Promise((resolve, reject) => {
+        const oModel = this.getView().getModel("bpModel");
+        if (!oModel) {
+          reject(new Error("bpModel no existe"));
+          return;
+        }
+
+        oModel.read(sPath, {
+          success: resolve,
+          error: reject
+        });
+      });
+    },
+
+    /* ========================================================= */
+    /* NUEVA API: RFC → BusinessPartner */
+    /* ========================================================= */
+          _resolveBPFromTaxId: async function (taxIdRaw) {
+
+            const oModel = this.getView().getModel("bpModel");
+            console.warn("SERVICE URL:", oModel.sServiceUrl);
+
+            const taxId = (taxIdRaw || "").trim().toUpperCase();
+            if (!taxId) return null;
+
+            try {
+
+              const oData = await new Promise((resolve, reject) => {
+
+                oModel.read("/A_BusinessPartnerTaxNumber", {
+                  urlParameters: {
+                    "$filter": `BPTaxNumber eq '${taxId}'`
+                  },
+                  success: resolve,
+                  error: reject
+                });
+
+              });
+
+              const results = oData?.results || [];
+
+              // 🔎 DEBUG TABLA LIMPIA
+              console.table(
+                results.map(r => ({
+                  BusinessPartner: r.BusinessPartner,
+                  BPTaxType: r.BPTaxType,
+                  BPTaxNumber: r.BPTaxNumber,
+                  AuthorizationGroup: r.AuthorizationGroup
+                }))
+              );
+
+              if (!results.length) {
+                console.warn("[DBG] No BP encontrado para RFC:", taxId);
+                return null;
+              }
+
+              // Si quieres forzar MX1 explícitamente
+              const mx1 = results.find(r => r.BPTaxType === "MX1");
+
+              const bp = mx1 ? mx1.BusinessPartner : results[0].BusinessPartner;
+
+              console.warn("RFC:", taxId, "→ BP:", bp);
+              console.warn("[DBG] BP correcto resuelto:", bp);
+
+              return bp;
+
+            } catch (e) {
+              console.error("[API TAX ERROR]", e);
+              return null;
+            }
+          },
+
+    /* ========================================================= */
+    /* EXTRAER RFC DESDE XML (Tax/Dbtr/TaxId) */
+    /* ========================================================= */
+    _getTaxIdFromPayment: function (paymentNode) {
+
+      const taxId =
+        paymentNode
+          .getElementsByTagNameNS(NS, "Tax")[0]
+          ?.getElementsByTagNameNS(NS, "Dbtr")[0]
+          ?.getElementsByTagNameNS(NS, "TaxId")[0]
+          ?.textContent
+          ?.trim() || "";
+
+      console.warn("[DBG] TaxId extraído del XML:", taxId);
+      return taxId;
+    },
+
+    /* ========================================================= */
+    /* API 2: Address → POBox */
+    /* ========================================================= */
+    _getBPAddressWithPOBox: async function (bp) {
+
+      const path = `/A_BusinessPartner('${bp}')/to_BusinessPartnerAddress`;
+
+      try {
+        const oData = await this._readV2(path);
+        const list = oData?.results || [];
+
+        console.warn("[DBG ADDRESS LIST RAW]", list);
+
+        const withPOBox = list.find(x =>
+          (x.POBox || x.PoBox || "").trim() !== ""
+        );
+
+        if (!withPOBox && list.length) {
+          return { __exists: true, __poBoxMissing: true, first: list[0] };
+        }
+
+        return withPOBox || null;
+
+      } catch (e) {
+        console.error("[API ADDRESS ERROR]", e);
+        return null;
+      }
+    },
+
+    /* ========================================================= */
+    /* API 3: BP Bank */
+    /* ========================================================= */
+    _getBPBank: async function (bp) {
+
+      const path = `/A_BusinessPartner('${bp}')/to_BusinessPartnerBank`;
+
+      try {
+        const oData = await this._readV2(path);
+        const list = oData?.results || [];
+
+        const best = list.find(x =>
+          (x.BankAccountHolderName || "").trim() !== "" ||
+          (x.BankAccountName || "").trim() !== ""
+        );
+
+        return best || list[0] || null;
+
+      } catch (e) {
+        console.error("[API BANK ERROR]", e);
+        return null;
+      }
+    },
+
+    /* ========================================================= */
+    /* CONVERT */
+    /* ========================================================= */
+    onConvert: function () {
+
+      if (!this._xmlFile) {
+        MessageToast.show("Selecciona un XML primero");
+        return;
+      }
+
+      const tipoSel = this.byId("sbTipo").getSelectedKey();
+      const mapTipo = { INTER: "IB", TERC: "BX", REEM: "REEM" };
+      const tipoPOBox = mapTipo[tipoSel];
+
+      const reader = new FileReader();
+
+      reader.onload = async (e) => {
+
+        try {
+
+          const xmlString = e.target.result || "";
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+
+          const payments = xmlDoc.getElementsByTagNameNS(NS, "CdtTrfTxInf");
+          const bankId = xmlDoc.getElementsByTagNameNS(NS, "MmbId")[0]?.textContent?.trim() || "";
+
+          if (!payments.length) {
+            MessageToast.show("No se encontraron pagos");
+            return;
+          }
+
+          const bankData = await this._getBankData(bankId);
+          const branch = bankData.branch || "";
+
+          let pagosValidos = [];
+
+          for (let i = 0; i < payments.length; i++) {
+
+            const p = payments[i];
+
+            const taxId = this._getTaxIdFromPayment(p);
+            if (!taxId) continue;
+
+            const bp = await this._resolveBPFromTaxId(taxId);
+            if (!bp) continue;
+
+            const addr = await this._getBPAddressWithPOBox(bp);
+            if (!addr) continue;
+
+            if (addr.__exists && addr.__poBoxMissing) {
+              console.warn("[SKIP] BP existe pero NO tiene POBox:", bp);
+              continue;
+            }
+
+            const poBox = (addr.POBox || addr.PoBox || "").trim().toUpperCase();
+
+            if (poBox !== tipoPOBox) {
+              console.warn("[SKIP] POBox no coincide", { bp, poBox, tipoPOBox });
+              continue;
+            }
+
+            const bankBP = await this._getBPBank(bp);
+
+            pagosValidos.push({
+              xmlNode: p,
+              bpId: bp,
+              poBox: poBox,
+              branch: branch,
+              holder: bankBP?.BankAccountHolderName || "",
+              currency: bankBP?.BankAccountName || ""
+            });
+          }
+
+          let txt = "";
+
+          if (tipoSel === "INTER") {
+            txt = Interbancarios.convert(xmlString, pagosValidos);
+            MessageToast.show(`Conversión de Interbancarios Exitosa`);
+          } else if (tipoSel === "TERC") {
+            txt = Terceros.convert(xmlString, pagosValidos);
+            MessageToast.show(`Conversión de Terceros Exitosa`);
+          } else if (tipoSel === "REEM") {
+            txt = Reembolsos.convert(xmlString, pagosValidos);
+            MessageToast.show(`Conversión de Reembolsos Exitosa`);
+          }
+
+          this._txtContent = txt;
+          this.byId("taTxt").setValue(txt);
+          this.byId("btnDownload").setEnabled(!!txt);
+
+         //MessageToast.show(`Conversión de Interbancarios Exitosa: ${pagosValidos.length}`);
+
+        } catch (err) {
+          console.error(err);
+          MessageToast.show("Error en conversión (ver consola)");
+        }
+      };
+
+      reader.readAsText(this._xmlFile);
+    },
+
+    /* ========================================================= */
+    /* DOWNLOAD */
+    /* ========================================================= */
+    onDownload: function () {
+
+      if (!this._txtContent) {
+        MessageToast.show("Primero convierte para generar el TXT");
+        return;
+      }
+
+      const xmlName = this._xmlFile?.name || "archivo";
+      const baseName = xmlName.replace(/\.xml$/i, "") || "archivo";
+
+      FileUtil.save(
+        this._txtContent,
+        baseName,
+        "txt",
+        "text/plain;charset=utf-8"
+      );
+    }
+
+  });
+
+});

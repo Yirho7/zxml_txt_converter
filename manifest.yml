@@ -1,0 +1,22 @@
+applications:
+  - name: zxmltxt-converter
+    path: approuter
+    memory: 256M
+    buildpacks:
+      - nodejs_buildpack
+    command: npm start
+    env:
+      NODE_ENV: production
+      destinations: |
+        [
+          {
+            "name": "S4",
+            "type": "HTTP",
+            "proxyType": "Internet",
+            "url": "https://my423961-api.s4hana.cloud.sap",
+            "authentication": "BasicAuthentication",
+            "user": "S4HCP_SOTC_T01",
+            "password": "F~]qjHM/wGjD@]FQYG5g$ksfM<B+$5=Y[\\VBBdX6",
+            "forwardAuthToken": false
+          }
+        ]

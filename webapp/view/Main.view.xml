@@ -1,0 +1,118 @@
+<mvc:View
+  controllerName="zxmltxt.zxmltxtconverter.controller.Main"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:u="sap.ui.unified">
+
+
+  <App>
+  <pages>
+    <Page title="Conversor XML a TXT" class="sapUiNoContentPadding">
+            <content>
+
+              <!-- CONTENEDOR GENERAL -->
+              <VBox width="100%" class="sapUiSmallMargin">
+
+                <!-- BLOQUE SUPERIOR (ANCHO FIJO COMO TU RECUADRO ROJO) -->
+                <HBox
+                  width="100%"
+                  justifyContent="Center"
+                  class="sapUiSmallMarginBottom">
+
+                  <!-- CONTENEDOR CON ANCHO CONTROLADO -->
+                  <VBox
+                    width="700px"
+                    class="sapUiMediumMargin sapUiContentPadding">
+
+                    <u:FileUploader
+                      id="fuXml"
+                      width="100%"
+                      fileType="xml"
+                      change=".onFileChange"
+                      placeholder="Selecciona un archivo XML..."
+                      buttonText="Buscar" 
+                       style="Emphasized"/>
+
+
+
+                    <HBox
+                      class="sapUiSmallMarginTop"
+                      justifyContent="Center">
+
+                      <SegmentedButton
+                        id="sbTipo"
+                        selectedKey="INTER"
+                        class="sbTipoPago sapUiSmallMarginBottom">
+
+                        <items>
+                          <SegmentedButtonItem
+                            key="INTER"
+                            text="Interbancario" />
+
+                          <SegmentedButtonItem
+                            key="TERC"
+                            text="Terceros" />
+
+                          <SegmentedButtonItem
+                            key="REEM"
+                            text="Reembolso" />
+                        </items>
+
+                      </SegmentedButton>
+
+                    </HBox>
+
+                    <HBox
+                      class="sapUiSmallMarginTop"
+                      justifyContent="Center">
+
+                      <Button
+                        text="Convertir a TXT"
+                        type="Emphasized"
+                        press=".onConvert" />
+
+                      <Button
+                        id="btnDownload"
+                        text="Descargar TXT"
+                        enabled="false"
+                        class="sapUiTinyMarginBegin"
+                        press=".onDownload" />
+
+
+                      <!--   <Button
+                        text="TEST SERVICE"
+                        press="onTestAllServices"/> -->
+
+                    </HBox>
+
+                  </VBox>
+                </HBox>
+
+                <!-- VISTA PREVIA TXT (ANCHO COMPLETO) -->
+                <VBox width="100%" class="sapUiSmallMarginTop">
+
+                  <Text
+                    text="Vista previa TXT:"
+                    class="sapUiSmallMarginBottom" />
+
+                  <TextArea
+                      id="taTxt"
+                      width="98%"
+                      rows="12"
+                      editable="false"
+                      wrapping="Off"
+                      class="txtPreview"
+                      placeholder="Aquí aparecerá el TXT generado..." />
+
+                </VBox>
+
+              </VBox>
+
+            </content>
+
+    </Page>
+  </pages>
+</App>
+
+
+</mvc:View>

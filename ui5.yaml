@@ -1,0 +1,17 @@
+specVersion: "4.0"
+metadata:
+  name: zxmltxt.zxmltxtconverter
+type: application
+
+server:
+  customMiddleware:
+    - name: fiori-tools-proxy
+      afterMiddleware: compression
+      configuration:
+        ignoreCertError: true
+        backend:
+          - path: /sap
+            url: https://my423961-api.s4hana.cloud.sap
+            authenticationType: BasicAuthentication
+            username: "CREDITO"
+            password: '5F<vPFk3efkoEPBG{hA3uF#rASWi42NZEE==lwTS'

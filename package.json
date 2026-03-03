@@ -1,0 +1,13 @@
+{
+  "name": "zxml_txt_converter",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "fiori run",
+    "build": "ui5 build",
+    "build:cf": "ui5 build --clean-dest && rm -rf approuter/dist && cp -r dist approuter/"
+  },
+  "devDependencies": {
+    "@sap/ux-ui5-tooling": "^1.20.2"
+  }
+}

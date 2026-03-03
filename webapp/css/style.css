@@ -1,0 +1,23 @@
+#taTxt textarea {
+  font-family: "Courier New", monospace;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.txtPreview textarea {
+  font-family: "Courier New", Consolas, monospace !important;
+  white-space: pre !important;
+}
+
+.apUiSmallMarginBottom .sapMSegBBtn {
+  min-width: 180px;   /* ← AJUSTA AQUÍ */
+  text-align: center;
+}
+
+.sapMSegBBtn,
+.sapMSegBBtn * {
+  cursor: pointer !important;
+  user-select: none;
+}
+
+

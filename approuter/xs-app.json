@@ -1,0 +1,18 @@
+{
+  "welcomeFile": "/index.html",
+  "authenticationMethod": "none",
+  "routes": [
+    {
+      "source": "^/sap/(.*)$",
+      "target": "/sap/$1",
+      "destination": "S4",
+      "authenticationType": "none"
+    },
+    {
+      "source": "^(.*)$",
+      "target": "$1",
+      "localDir": "dist",
+      "cacheControl": "no-cache"
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "sap.app": {
+    "id": "zxmltxt.zxmltxtconverter",
+    "type": "application",
+    "title": "Conversor XML a TXT",
+    "dataSources": {
+      "SAP_API": {
+        "uri": "/sap/opu/odata/sap/API_OPLACCTGDOCITEMCUBE_SRV/",
+        "type": "OData",
+        "settings": {
+          "odataVersion": "2.0"
+        }
+      },
+      "BANK_API": {
+        "uri": "/sap/opu/odata4/sap/api_bank/srvd_a2x/sap/bank/0003/",
+        "type": "OData",
+        "settings": {
+          "odataVersion": "4.0"
+        }
+      },
+
+    "BP_API": {
+        "uri": "/sap/opu/odata/sap/API_BUSINESS_PARTNER/",
+        "type": "OData",
+        "settings": {
+        "odataVersion": "2.0"
+    }
+  }
+    }
+  },
+
+  "sap.ui": {
+    "technology": "UI5"
+  },
+
+  "sap.ui5": {
+    "rootView": {
+      "viewName": "zxmltxt.zxmltxtconverter.view.Main",
+      "type": "XML",
+      "async": true,
+      "id": "Main"
+    },
+
+    "resources": {
+      "css": [
+        {
+          "uri": "css/style.css"
+        }
+      ]
+    },
+
+    "dependencies": {
+      "minUI5Version": "1.108",
+      "libs": {
+        "sap.m": {},
+        "sap.ui.core": {},
+        "sap.ui.unified": {}
+      }
+    },
+
+    "models": {
+      "sapModel": {
+        "dataSource": "SAP_API",
+        "settings": {
+          "defaultBindingMode": "TwoWay",
+          "useBatch": false
+        }
+      },
+
+      "bankModel": {
+        "dataSource": "BANK_API",
+        "type": "sap.ui.model.odata.v4.ODataModel",
+        "settings": {
+          "synchronizationMode": "None",
+          "operationMode": "Server",
+          "groupId": "$direct",
+          "updateGroupId": "$direct"
+        }
+      },
+
+      "bpModel": {
+        "dataSource": "BP_API",
+        "settings": {
+          "defaultBindingMode": "TwoWay",
+          "useBatch": false
+        }
+      }
+    }
+  }
+}

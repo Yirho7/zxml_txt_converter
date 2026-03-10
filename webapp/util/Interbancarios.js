@@ -34,10 +34,10 @@ sap.ui.define([], function () {
       const msgId = clean(xml.getElementsByTagNameNS(NS, "MsgId")[0]?.textContent || "");
 
       // Cuenta ORIGEN: DbtrAcct/Id/Othr/Id 
-      const cuentaOrigenRaw = qPath(xml, ["DbtrAcct", "Id", "Othr", "Id"]); // ej: 002180075097500385
+      let cuentaOrigenRaw = qPath(xml, ["DbtrAcct", "Id", "Othr", "Id"]); // ej: 002180075097500385
       if (cuentaOrigenRaw === "07500010341") {
             cuentaOrigenRaw = "00000010341";
-          }
+          };
       const cuentaOrigen = padLeft(cuentaOrigenRaw.replace(/\D/g, ""), 20);
 
       let lines = [];

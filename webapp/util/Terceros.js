@@ -63,11 +63,15 @@ sap.ui.define([], function () {
       const msgId = q(xml, "MsgId");
 
       // Cuenta ORIGEN (misma idea que INTER)
-      const cuentaOrigenRaw =
+      let cuentaOrigenRaw =
         qPath(xml, ["DbtrAcct", "Id", "Othr", "Id"]);
 
+          if (cuentaOrigenRaw === "07500010341") {
+            cuentaOrigenRaw = "00000010341";
+          };  
       const cuentaOrigen =
         padLeft((cuentaOrigenRaw || "").replace(/\D/g, ""), 20);
+
 
       let lines = [];
 

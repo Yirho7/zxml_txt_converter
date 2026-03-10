@@ -40,7 +40,6 @@ sap.ui.define([], function () {
       const q = (node, tag) =>
         clean(node.getElementsByTagNameNS(NS, tag)?.[0]?.textContent);
 
-
       const mapCurrency = (currency) => {
 
       const cur = String(currency || "").toUpperCase();
@@ -92,11 +91,8 @@ sap.ui.define([], function () {
         /* Datos del XML que se muestran en la VIEW                  */
         /* =============================== */
 
-        const cuentaDestino = padLeft(
-          qPath(p, ["CdtrAcct", "Id", "Othr", "Id"])
-            .replace(/\D/g, ""),
-          20
-        );
+        const cuentaDestino = padLeft(qPath(p, ["CdtrAcct", "Id", "Othr", "Id"]).replace(/\D/g, ""),20);
+       
 
         const importe = padLeft(
           q(p, "InstdAmt").replace(".", ""),
@@ -109,6 +105,8 @@ sap.ui.define([], function () {
           34
         );
 
+
+        const numAsiento = padLeft(qPath(p, ["PmtId", "EndToEndId"]));
         /* =============================== */
         /* LAYOUT (NO MODIFICADO)          */
         /* =============================== */
@@ -118,7 +116,7 @@ sap.ui.define([], function () {
         const sucursalOrigen = branch;
 
         const tipoCuentaDestino = "01";
-        const sucursalDestino = "0000";
+        const sucursalDestino = holder;
 
         const tipoMoneda = mapCurrency(currency);
 
@@ -150,7 +148,7 @@ sap.ui.define([], function () {
           tipoMoneda +
           descripcion +
           concepto +
-          referencia +
+          numAsiento +
           moneda +
           fechaAplicacion +
           horaAplicacion;

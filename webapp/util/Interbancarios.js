@@ -35,6 +35,9 @@ sap.ui.define([], function () {
 
       // Cuenta ORIGEN: DbtrAcct/Id/Othr/Id 
       const cuentaOrigenRaw = qPath(xml, ["DbtrAcct", "Id", "Othr", "Id"]); // ej: 002180075097500385
+      if (cuentaOrigenRaw === "07500010341") {
+            cuentaOrigenRaw = "00000010341";
+          }
       const cuentaOrigen = padLeft(cuentaOrigenRaw.replace(/\D/g, ""), 20);
 
       let lines = [];
@@ -64,13 +67,16 @@ sap.ui.define([], function () {
         // Descripción 
         const descripcion = padRight(`Pago Factura: ${msgId}`, 40);
 
+        // Numero de Asiento
+        const numAsiento = padLeft(qPath(p, ["PmtId", "EndToEndId"]).slice(-7),7);
+
         // ===== Layout estructura base =====
         const tipoTransaccion = "09";
         const tipoCuentaOrigen = "01";
         const sucursalOrigen = branch;    
         const moneda = "001";
         const tipoCuentaDestino = "40";
-        const referencia = padLeft("", 7);
+        
         const plazo = "00";
         const iva = padLeft("0", 12);
         const banco = "0021";
@@ -88,7 +94,7 @@ sap.ui.define([], function () {
           tipoCuentaDestino +
           cuentaDestino +
           descripcion +
-          referencia +
+          numAsiento +
           beneficiario +
           plazo +
           rfc +

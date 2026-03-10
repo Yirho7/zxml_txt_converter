@@ -211,7 +211,7 @@ sap.ui.define([
     onConvert: function () {
 
       if (!this._xmlFile) {
-        MessageToast.show("Selecciona un XML primero");
+        MessageToast.show("Selecciona un XML");
         return;
       }
 
@@ -240,44 +240,45 @@ sap.ui.define([
           const bankData = await this._getBankData(bankId);
           const branch = bankData.branch || "";
 
+         
+
           let pagosValidos = [];
 
-          for (let i = 0; i < payments.length; i++) {
-
-            const p = payments[i];
+          const tasks = Array.from(payments).map(async (p) => {
 
             const taxId = this._getTaxIdFromPayment(p);
-            if (!taxId) continue;
+            if (!taxId) return null;
 
             const bp = await this._resolveBPFromTaxId(taxId);
-            if (!bp) continue;
+            if (!bp) return null;
 
             const addr = await this._getBPAddressWithPOBox(bp);
-            if (!addr) continue;
+            if (!addr) return null;
 
-            if (addr.__exists && addr.__poBoxMissing) {
-              console.warn("[SKIP] BP existe pero NO tiene POBox:", bp);
-              continue;
-            }
+            if (addr.__exists && addr.__poBoxMissing) return null;
 
-            const poBox = (addr.POBox || addr.PoBox || "").trim().toUpperCase();
+            const poBox = (addr.POBox || addr.PoBox || "")
+              .trim()
+              .toUpperCase();
 
-            if (poBox !== tipoPOBox) {
-              console.warn("[SKIP] POBox no coincide", { bp, poBox, tipoPOBox });
-              continue;
-            }
+            if (poBox !== tipoPOBox) return null;
 
             const bankBP = await this._getBPBank(bp);
 
-            pagosValidos.push({
+            return {
               xmlNode: p,
               bpId: bp,
               poBox: poBox,
               branch: branch,
               holder: bankBP?.BankAccountHolderName || "",
               currency: bankBP?.BankAccountName || ""
-            });
-          }
+            };
+
+          });
+
+          const results = await Promise.all(tasks);
+
+          pagosValidos = results.filter(x => x !== null);
 
           let txt = "";
 
@@ -300,7 +301,7 @@ sap.ui.define([
 
         } catch (err) {
           console.error(err);
-          MessageToast.show("Error en conversión (ver consola)");
+          MessageToast.show("Error en conversión o Credenciales Incorrectas)");
         }
       };
 

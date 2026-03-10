@@ -110,6 +110,13 @@
 
             </content>
 
+              <footer>
+                <Toolbar>
+                  <ToolbarSpacer/>
+                  <Text text="Versión 1.0.1"/>
+                </Toolbar>
+              </footer>
+
     </Page>
   </pages>
 </App>

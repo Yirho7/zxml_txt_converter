@@ -31,6 +31,7 @@ sap.ui.define([
     /* FILE */
     /* ========================================================= */
     onFileChange: function (oEvent) {
+
       const files = oEvent.getParameter("files");
       this._xmlFile = (files && files.length) ? files[0] : null;
 
@@ -41,30 +42,35 @@ sap.ui.define([
       if (this._xmlFile) {
         MessageToast.show("XML seleccionado: " + this._xmlFile.name);
       }
+
     },
 
     /* ========================================================= */
     /* API HELPERS */
     /* ========================================================= */
 
-    // API 1 (OData V4) Bank
     _getBankData: async function (bankId) {
+
       const oModel = this.getView().getModel("bankModel");
       if (!oModel) throw new Error("bankModel no existe");
 
       const path = `/Bank(BankCountry='MX',BankInternalID='${bankId}')`;
+
       const ctx = oModel.bindContext(path);
       const data = await ctx.requestObject();
 
       return {
         branch: data?.LongBankBranch || ""
       };
+
     },
 
-    // Helper lectura OData V2
     _readV2: function (sPath) {
+
       return new Promise((resolve, reject) => {
+
         const oModel = this.getView().getModel("bpModel");
+
         if (!oModel) {
           reject(new Error("bpModel no existe"));
           return;
@@ -74,70 +80,15 @@ sap.ui.define([
           success: resolve,
           error: reject
         });
+
       });
+
     },
 
     /* ========================================================= */
-    /* NUEVA API: RFC → BusinessPartner */
+    /* EXTRAER RFC DESDE XML */
     /* ========================================================= */
-          _resolveBPFromTaxId: async function (taxIdRaw) {
 
-            const oModel = this.getView().getModel("bpModel");
-            console.warn("SERVICE URL:", oModel.sServiceUrl);
-
-            const taxId = (taxIdRaw || "").trim().toUpperCase();
-            if (!taxId) return null;
-
-            try {
-
-              const oData = await new Promise((resolve, reject) => {
-
-                oModel.read("/A_BusinessPartnerTaxNumber", {
-                  urlParameters: {
-                    "$filter": `BPTaxNumber eq '${taxId}'`
-                  },
-                  success: resolve,
-                  error: reject
-                });
-
-              });
-
-              const results = oData?.results || [];
-
-              // 🔎 DEBUG TABLA LIMPIA
-              console.table(
-                results.map(r => ({
-                  BusinessPartner: r.BusinessPartner,
-                  BPTaxType: r.BPTaxType,
-                  BPTaxNumber: r.BPTaxNumber,
-                  AuthorizationGroup: r.AuthorizationGroup
-                }))
-              );
-
-              if (!results.length) {
-                console.warn("[DBG] No BP encontrado para RFC:", taxId);
-                return null;
-              }
-
-              // Si quieres forzar MX1 explícitamente
-              const mx1 = results.find(r => r.BPTaxType === "MX1");
-
-              const bp = mx1 ? mx1.BusinessPartner : results[0].BusinessPartner;
-
-              console.warn("RFC:", taxId, "→ BP:", bp);
-              console.warn("[DBG] BP correcto resuelto:", bp);
-
-              return bp;
-
-            } catch (e) {
-              console.error("[API TAX ERROR]", e);
-              return null;
-            }
-          },
-
-    /* ========================================================= */
-    /* EXTRAER RFC DESDE XML (Tax/Dbtr/TaxId) */
-    /* ========================================================= */
     _getTaxIdFromPayment: function (paymentNode) {
 
       const taxId =
@@ -148,22 +99,124 @@ sap.ui.define([
           ?.textContent
           ?.trim() || "";
 
-      console.warn("[DBG] TaxId extraído del XML:", taxId);
       return taxId;
+
     },
 
     /* ========================================================= */
-    /* API 2: Address → POBox */
+    /* EXTRAER NOMBRE DESDE XML */
     /* ========================================================= */
+
+    _getNameFromPayment: function (paymentNode) {
+
+      const name =
+        paymentNode
+          .getElementsByTagNameNS(NS, "Cdtr")[0]
+          ?.getElementsByTagNameNS(NS, "Nm")[0]
+          ?.textContent
+          ?.trim() || "";
+
+      return name;
+
+    },
+
+    /* ========================================================= */
+    /* BUSCAR BP POR NOMBRE */
+    /* ========================================================= */
+
+    _resolveBPFromName: async function (nameRaw) {
+
+      const oModel = this.getView().getModel("bpModel");
+
+      const name = (nameRaw || "").trim();
+
+      if (!name) return null;
+
+      try {
+
+        const oData = await new Promise((resolve, reject) => {
+
+          oModel.read("/A_BusinessPartner", {
+            urlParameters: {
+              "$filter": `BusinessPartnerFullName eq '${name}'`
+            },
+            success: resolve,
+            error: reject
+          });
+
+        });
+
+        const results = oData?.results || [];
+
+        if (!results.length) return null;
+
+        return results[0].BusinessPartner;
+
+      } catch (e) {
+
+        console.error("[API NAME ERROR]", e);
+        return null;
+
+      }
+
+    },
+
+    /* ========================================================= */
+    /* BUSCAR BP POR RFC (TU MÉTODO ORIGINAL) */
+    /* ========================================================= */
+
+    _resolveBPFromTaxId: async function (taxIdRaw) {
+
+      const oModel = this.getView().getModel("bpModel");
+
+      const taxId = (taxIdRaw || "").trim().toUpperCase();
+      if (!taxId) return null;
+
+      try {
+
+        const oData = await new Promise((resolve, reject) => {
+
+          oModel.read("/A_BusinessPartnerTaxNumber", {
+            urlParameters: {
+              "$filter": `BPTaxNumber eq '${taxId}'`
+            },
+            success: resolve,
+            error: reject
+          });
+
+        });
+
+        const results = oData?.results || [];
+
+        if (!results.length) return null;
+
+        const mx1 = results.find(r => r.BPTaxType === "MX1");
+
+        const bp = mx1 ? mx1.BusinessPartner : results[0].BusinessPartner;
+
+        return bp;
+
+      } catch (e) {
+
+        console.error("[API TAX ERROR]", e);
+        return null;
+
+      }
+
+    },
+
+    /* ========================================================= */
+    /* API ADDRESS */
+    /* ========================================================= */
+
     _getBPAddressWithPOBox: async function (bp) {
 
       const path = `/A_BusinessPartner('${bp}')/to_BusinessPartnerAddress`;
 
       try {
+
         const oData = await this._readV2(path);
         const list = oData?.results || [];
-
-        console.warn("[DBG ADDRESS LIST RAW]", list);
 
         const withPOBox = list.find(x =>
           (x.POBox || x.PoBox || "").trim() !== ""
@@ -176,19 +229,24 @@ sap.ui.define([
         return withPOBox || null;
 
       } catch (e) {
+
         console.error("[API ADDRESS ERROR]", e);
         return null;
+
       }
+
     },
 
     /* ========================================================= */
-    /* API 3: BP Bank */
+    /* API BANK */
     /* ========================================================= */
+
     _getBPBank: async function (bp) {
 
       const path = `/A_BusinessPartner('${bp}')/to_BusinessPartnerBank`;
 
       try {
+
         const oData = await this._readV2(path);
         const list = oData?.results || [];
 
@@ -200,14 +258,18 @@ sap.ui.define([
         return best || list[0] || null;
 
       } catch (e) {
+
         console.error("[API BANK ERROR]", e);
         return null;
+
       }
+
     },
 
     /* ========================================================= */
     /* CONVERT */
     /* ========================================================= */
+
     onConvert: function () {
 
       if (!this._xmlFile) {
@@ -216,7 +278,13 @@ sap.ui.define([
       }
 
       const tipoSel = this.byId("sbTipo").getSelectedKey();
-      const mapTipo = { INTER: "IB", TERC: "BX", REEM: "REEM" };
+
+      const mapTipo = {
+        INTER: "IB",
+        TERC: "BX",
+        REEM: "REEM"
+      };
+
       const tipoPOBox = mapTipo[tipoSel];
 
       const reader = new FileReader();
@@ -226,11 +294,17 @@ sap.ui.define([
         try {
 
           const xmlString = e.target.result || "";
+
           const parser = new DOMParser();
           const xmlDoc = parser.parseFromString(xmlString, "text/xml");
 
           const payments = xmlDoc.getElementsByTagNameNS(NS, "CdtTrfTxInf");
-          const bankId = xmlDoc.getElementsByTagNameNS(NS, "MmbId")[0]?.textContent?.trim() || "";
+
+          const bankId =
+            xmlDoc
+              .getElementsByTagNameNS(NS, "MmbId")[0]
+              ?.textContent
+              ?.trim() || "";
 
           if (!payments.length) {
             MessageToast.show("No se encontraron pagos");
@@ -240,16 +314,25 @@ sap.ui.define([
           const bankData = await this._getBankData(bankId);
           const branch = bankData.branch || "";
 
-         
-
           let pagosValidos = [];
 
           const tasks = Array.from(payments).map(async (p) => {
 
-            const taxId = this._getTaxIdFromPayment(p);
-            if (!taxId) return null;
+            /* BUSCAR POR NOMBRE PRIMERO */
+            const name = this._getNameFromPayment(p);
+            let bp = await this._resolveBPFromName(name);
 
-            const bp = await this._resolveBPFromTaxId(taxId);
+            /* FALLBACK A RFC SI NO ENCUENTRA */
+            if (!bp) {
+
+              const taxId = this._getTaxIdFromPayment(p);
+
+              if (taxId) {
+                bp = await this._resolveBPFromTaxId(taxId);
+              }
+
+            }
+
             if (!bp) return null;
 
             const addr = await this._getBPAddressWithPOBox(bp);
@@ -283,34 +366,44 @@ sap.ui.define([
           let txt = "";
 
           if (tipoSel === "INTER") {
+
             txt = Interbancarios.convert(xmlString, pagosValidos);
             MessageToast.show(`Conversión de Interbancarios Exitosa`);
+
           } else if (tipoSel === "TERC") {
+
             txt = Terceros.convert(xmlString, pagosValidos);
             MessageToast.show(`Conversión de Terceros Exitosa`);
+
           } else if (tipoSel === "REEM") {
+
             txt = Reembolsos.convert(xmlString, pagosValidos);
             MessageToast.show(`Conversión de Reembolsos Exitosa`);
+
           }
 
           this._txtContent = txt;
+
           this.byId("taTxt").setValue(txt);
           this.byId("btnDownload").setEnabled(!!txt);
 
-         //MessageToast.show(`Conversión de Interbancarios Exitosa: ${pagosValidos.length}`);
-
         } catch (err) {
+
           console.error(err);
-          MessageToast.show("Error en conversión o Credenciales Incorrectas)");
+          MessageToast.show("Error en conversión o Credenciales Incorrectas");
+
         }
+
       };
 
       reader.readAsText(this._xmlFile);
+
     },
 
     /* ========================================================= */
     /* DOWNLOAD */
     /* ========================================================= */
+
     onDownload: function () {
 
       if (!this._txtContent) {
@@ -319,6 +412,7 @@ sap.ui.define([
       }
 
       const xmlName = this._xmlFile?.name || "archivo";
+
       const baseName = xmlName.replace(/\.xml$/i, "") || "archivo";
 
       FileUtil.save(
@@ -327,6 +421,7 @@ sap.ui.define([
         "txt",
         "text/plain;charset=utf-8"
       );
+
     }
 
   });

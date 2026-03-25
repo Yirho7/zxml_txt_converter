@@ -44,6 +44,7 @@ sap.ui.define([], function () {
 
       (pagosValidos || []).forEach(obj => {
         const p = obj.xmlNode;
+        const refNbPago = qPath(p, ["Tax", "RefNb"]);
 
         // Datos de APIs 
         const branch = padLeft(obj.branch, 4);       // LongBankBranch (API1)
@@ -65,7 +66,8 @@ sap.ui.define([], function () {
         const importe = padLeft(importeRaw.replace(".", ""), 14);
 
         // Descripción 
-        const descripcion = padRight(`Pago Factura: ${msgId}`, 40);
+        //const descripcion = padRight(`Pago Factura: ${RefNb}`, 40);
+        const descripcion = padRight(`Pago Factura: ${refNbPago}`, 40);
 
         // Numero de Asiento
         const numAsiento = padLeft(qPath(p, ["PmtId", "EndToEndId"]).slice(-7),7);

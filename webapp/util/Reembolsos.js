@@ -58,6 +58,7 @@ sap.ui.define([], function () {
       (pagosValidos || []).forEach(obj => {
 
         const p = obj.xmlNode;
+        const refNbPago = qPath(p, ["Tax", "RefNb"]);
 
         /* ===============================
          * Datos APIs
@@ -102,10 +103,7 @@ sap.ui.define([], function () {
 
         const tipoMoneda = "001";
 
-        const descripcion = padRight(
-          `Reembolso ${msgId}`,
-          24
-        );
+        const descripcion = padRight(`Pago Factura: ${refNbPago}`, 40);
 
         const moneda = "000";
         const fechaAplicacion = "000000";

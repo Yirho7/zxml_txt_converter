@@ -162,7 +162,7 @@ sap.ui.define([
     },
 
     /* ========================================================= */
-    /* BUSCAR BP POR RFC (TU MÉTODO ORIGINAL) */
+    /* BUSCAR BP POR RFC */
     /* ========================================================= */
 
     _resolveBPFromTaxId: async function (taxIdRaw) {

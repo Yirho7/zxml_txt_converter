@@ -49,6 +49,23 @@ sap.ui.define([], function () {
       const cuentaOrigen =
         padLeft((cuentaOrigenRaw || "").replace(/\D/g, ""), 20);
 
+
+      const mapCurrency = (currency) => {
+
+      const cur = String(currency || "").toUpperCase();
+
+      switch (cur) {
+        case "MXN":
+          return "001";
+        case "USD":
+          return "002"; // o 005 si el banco lo pide así
+        case "EUR":
+          return "003";
+        default:
+          return "001"; // fallback seguro
+      }
+    };
+
       let lines = [];
 
       /* ===============================
@@ -90,6 +107,8 @@ sap.ui.define([], function () {
         const numAsiento = padLeft(
           qPath(p, ["PmtId", "EndToEndId"]),10);
 
+
+
         /* ===============================
          * Layout
          * =============================== */
@@ -101,9 +120,9 @@ sap.ui.define([], function () {
         const tipoCuentaDestino = "01";
         const sucursalDestino = holder;
 
-        const tipoMoneda = "001";
+        const tipoMoneda = mapCurrency(currency);
 
-        const descripcion = padRight(`Pago Factura: ${refNbPago}`, 40);
+        const descripcion = padRight(`Pago Factura: ${refNbPago}`, 24 );
 
         const moneda = "000";
         const fechaAplicacion = "000000";

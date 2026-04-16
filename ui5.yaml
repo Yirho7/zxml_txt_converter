@@ -10,8 +10,11 @@ server:
       configuration:
         ignoreCertError: true
         backend:
-          - path: /sap
-            url: https://my423961-api.s4hana.cloud.sap
+          - path: /sap            
+            url: https://my433000-api.s4hana.cloud.sap
             authenticationType: BasicAuthentication
-            username: "CREDITO"
-            password: '5F<vPFk3efkoEPBG{hA3uF#rASWi42NZEE==lwTS'
+            username: "S4HCP_ACTIN_P01"
+            password: '\t~fg@Mqvf>E/t65AwLAAU<fZ7mqZ)iiEb/yxfrQ'
+        
+   
+            

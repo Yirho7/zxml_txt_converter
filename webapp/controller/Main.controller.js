@@ -22,10 +22,10 @@ sap.ui.define([
     /* ========================================================= */
     /* INIT */
     /* ========================================================= */
-    onInit: function () {
-      this._xmlFile = null;
-      this._txtContent = "";
-    },
+      onInit: function () {
+        this._xmlFile = null;
+        this._txtContent = "";
+      },
 
     /* ========================================================= */
     /* FILE */
@@ -58,6 +58,7 @@ sap.ui.define([
 
       const ctx = oModel.bindContext(path);
       const data = await ctx.requestObject();
+      
 
       return {
         branch: data?.LongBankBranch || ""
@@ -98,7 +99,7 @@ sap.ui.define([
           ?.getElementsByTagNameNS(NS, "TaxId")[0]
           ?.textContent
           ?.trim() || "";
-
+      console.log("TaxId FINAL =>", taxId);
       return taxId;
 
     },
@@ -149,8 +150,9 @@ sap.ui.define([
         const results = oData?.results || [];
 
         if (!results.length) return null;
-
+       // console.log(results[0]);
         return results[0].BusinessPartner;
+         
 
       } catch (e) {
 
@@ -189,7 +191,7 @@ sap.ui.define([
         const results = oData?.results || [];
 
         if (!results.length) return null;
-
+       // console.log(results[0]);
         const mx1 = results.find(r => r.BPTaxType === "MX1");
 
         const bp = mx1 ? mx1.BusinessPartner : results[0].BusinessPartner;
@@ -217,7 +219,7 @@ sap.ui.define([
 
         const oData = await this._readV2(path);
         const list = oData?.results || [];
-
+       // console.log(list);
         const withPOBox = list.find(x =>
           (x.POBox || x.PoBox || "").trim() !== ""
         );
@@ -282,7 +284,9 @@ sap.ui.define([
       const mapTipo = {
         INTER: "IB",
         TERC: "BX",
-        REEM: "REEM"
+        REEM: "REEM",
+        //REEM: "REEM"
+        // RIB Y RBX
       };
 
       const tipoPOBox = mapTipo[tipoSel];
@@ -320,15 +324,19 @@ sap.ui.define([
 
             /* BUSCAR POR NOMBRE PRIMERO */
             const name = this._getNameFromPayment(p);
+            console.log("Nombre de BP =>", name);
             let bp = await this._resolveBPFromName(name);
+            console.log("Numero de BP =>", bp);
 
             /* FALLBACK A RFC SI NO ENCUENTRA */
             if (!bp) {
 
               const taxId = this._getTaxIdFromPayment(p);
+              
 
               if (taxId) {
                 bp = await this._resolveBPFromTaxId(taxId);
+                console.log("TAX =>", bp);
               }
 
             }
@@ -336,6 +344,8 @@ sap.ui.define([
             if (!bp) return null;
 
             const addr = await this._getBPAddressWithPOBox(bp);
+            console.log("Addr =>", addr);
+
             if (!addr) return null;
 
             if (addr.__exists && addr.__poBoxMissing) return null;
@@ -345,7 +355,9 @@ sap.ui.define([
               .toUpperCase();
 
             if (poBox !== tipoPOBox) return null;
-
+            console.log("poBox =>", poBox);
+            console.log("tipoPOBox =>", tipoPOBox);
+            
             const bankBP = await this._getBPBank(bp);
 
             return {

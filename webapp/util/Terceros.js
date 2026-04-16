@@ -121,11 +121,12 @@ sap.ui.define([], function () {
         const sucursalOrigen = branch;
 
         const tipoCuentaDestino = "01";
-        const sucursalDestino = holder;
+        //const sucursalDestino = holder;
+        const sucursalDestino = padLeft(holder || "", 4);
 
         const tipoMoneda = mapCurrency(currency);
 
-        const descripcion = padRight(`Pago Factura: ${refNbPago}`, 40);
+        const descripcion = padRight(`Pago Factura: ${refNbPago}`, 24);
 
         const referencia = padLeft("", 10);
         const moneda = "000";

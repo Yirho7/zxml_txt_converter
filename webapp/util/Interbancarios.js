@@ -69,8 +69,17 @@ sap.ui.define([], function () {
         //const descripcion = padRight(`Pago Factura: ${RefNb}`, 40);
         const descripcion = padRight(`Pago Factura: ${refNbPago}`, 40);
 
-        // Numero de Asiento
-        const numAsiento = padLeft(qPath(p, ["PmtId", "EndToEndId"]).slice(-7),7);
+       
+        // Fecha Tax/Dt en formato ddmmyy rellenado a 7 posiciones
+        const fechaTax = qPath(p, ["Tax", "Dt"]); // yyyy-mm-dd
+        const numAsiento = fechaTax
+          ? padLeft(
+              fechaTax.substring(8, 10) +  // dd
+              fechaTax.substring(5, 7) +  // mm
+              fechaTax.substring(2, 4),   // yy
+              7
+            )
+          : padLeft("", 7);
 
         // ===== Layout estructura base =====
         const tipoTransaccion = "09";

@@ -24,8 +24,8 @@
         "type": "OData",
         "settings": {
         "odataVersion": "2.0"
-    }
-  }
+      }
+     }
     }
   },
 

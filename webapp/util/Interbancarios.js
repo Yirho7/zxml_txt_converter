@@ -50,6 +50,8 @@ sap.ui.define([], function () {
         const branch = padLeft(obj.branch, 4);       // LongBankBranch (API1)
         const holder = clean(obj.holder);            // BankAccountHolderName (API3)
         const currency = clean(obj.currency);        // BankAccountName (API3)
+        const bankNumber = clean(obj.bankNumber);            // BankId
+        
 
         // Cuenta DESTINO CdtrAcct/Id/Othr/Id
         const cuentaDestinoRaw = qPath(p, ["CdtrAcct", "Id", "Othr", "Id"]);
@@ -67,7 +69,7 @@ sap.ui.define([], function () {
 
         // Descripción 
         //const descripcion = padRight(`Pago Factura: ${RefNb}`, 40);
-        const descripcion = padRight(`Pago Factura: ${refNbPago}`, 40);
+        const descripcion = padRight(`Pago Factura ${refNbPago}`, 40);
 
        
         // Fecha Tax/Dt en formato ddmmyy rellenado a 7 posiciones
@@ -90,7 +92,7 @@ sap.ui.define([], function () {
         
         const plazo = "00";
         const iva = padLeft("0", 12);
-        const banco = "0021";
+        const banco = padLeft(bankNumber, 4);
         const fechaAplicacion = "000000";
         const horaAplicacion = "0000";
 

@@ -257,7 +257,9 @@ sap.ui.define([
           (x.BankAccountName || "").trim() !== ""
         );
 
-        return best || list[0] || null;
+        return {
+          best: best || list[0] || null
+        };
 
       } catch (e) {
 
@@ -359,18 +361,20 @@ sap.ui.define([
             console.log("tipoPOBox =>", tipoPOBox);
             
             const bankBP = await this._getBPBank(bp);
-
+            
+      
             return {
               xmlNode: p,
               bpId: bp,
               poBox: poBox,
               branch: branch,
               holder: bankBP?.BankAccountHolderName || "",
-              currency: bankBP?.BankAccountName || ""
+              currency: bankBP?.BankAccountName || "",
+              bankNumber: bankBP?.best?.BankNumber || ""
             };
 
           });
-
+          
           const results = await Promise.all(tasks);
 
           pagosValidos = results.filter(x => x !== null);

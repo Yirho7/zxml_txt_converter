@@ -368,7 +368,7 @@ sap.ui.define([
               bpId: bp,
               poBox: poBox,
               branch: branch,
-              holder: bankBP?.BankAccountHolderName || "",
+              holder: bankBP?.best?.BankAccountHolderName || "",
               currency: bankBP?.BankAccountName || "",
               bankNumber: bankBP?.best?.BankNumber || ""
             };

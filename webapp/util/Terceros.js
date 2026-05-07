@@ -89,7 +89,7 @@ sap.ui.define([], function () {
         /* =============================== */
 
         const branch = padLeft(obj.branch, 4);   // API 1
-        const holder = clean(obj.holder || "");  // API 3
+        const holder = padLeft(obj.holder, 4);  // API 3
         const currency = clean(obj.currency || "");
 
         /* =============================== */
@@ -133,7 +133,7 @@ sap.ui.define([], function () {
         const fechaAplicacion = "000000";
         const horaAplicacion = "0000";
 
-        const beneficiario = padRight(holder, 55);
+        //const beneficiario = padRight(holder, 55);
 
         /* =============================== */
         /* Construcción final              */
